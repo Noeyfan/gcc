@@ -283,7 +283,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
         : __base_type(__p, __d, __a) { }
 
       template<typename _Tp1>
-        shared_ptr(const shared_ptr<_Tp1>& __r, _Tp* __p) noexcept
+        shared_ptr(const shared_ptr<_Tp1>& __r, element_type* __p) noexcept
         : __base_type(__r, __p) { }
 
       shared_ptr(const shared_ptr& __r) noexcept
@@ -512,13 +512,13 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
    template<typename _Tp, typename _Tp1>
      inline shared_ptr<_Tp>
      static_pointer_cast(const shared_ptr<_Tp1>& __r) noexcept
-     { return shared_ptr<_Tp>(__r, static_cast<_Tp*>(__r.get())); }
+     { shared_ptr<_Tp>(__r, static_cast<typename shared_ptr<_Tp>::element_type*>(__r.get())); }
 
    template<typename _Tp, typename _Tp1>
      inline shared_ptr<_Tp>
      dynamic_pointer_cast(const shared_ptr<_Tp1>& __r) noexcept
      {
-       if (_Tp* __p = dynamic_cast<_Tp*>(__r.get()))
+       if (_Tp* __p = dynamic_cast<typename shared_ptr<_Tp>::element_type*>(__r.get()))
          return shared_ptr<_Tp>(__r, __p);
        return shared_ptr<_Tp>();
      }
@@ -526,12 +526,12 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
    template<typename _Tp, typename _Tp1>
      inline shared_ptr<_Tp>
      const_pointer_cast(const shared_ptr<_Tp1>& __r) noexcept
-     { return shared_ptr<_Tp>(__r, const_cast<_Tp*>(__r.get())); }
+     { return shared_ptr<_Tp>(__r, const_cast<typename shared_ptr<_Tp>::element_type*>(__r.get())); }
 
    template<typename _Tp, typename _Tp1>
      inline shared_ptr<_Tp>
      reinterpret_pointer_cast(const shared_ptr<_Tp1>& __r) noexcept
-     { return shared_ptr<_Tp>(__r, reinterpret_cast<_Tp*>(__r.get())); }
+     { return shared_ptr<_Tp>(__r, reinterpret_cast<typename shared_ptr<_Tp>::element_type*>(__r.get())); }
 
    // C++14 §20.8.2.3
    template<typename _Tp> 
