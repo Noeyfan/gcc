@@ -75,9 +75,32 @@ test02()
 }
 
 int
+test03()
+{
+  bool test __attribute__((unused)) = true;
+
+  std::experimental::shared_ptr<B> b(new B);
+  std::experimental::shared_ptr<A> a1(b, b.get());
+  std::experimental::shared_ptr<A> a2(b, &b->a);
+  VERIFY( a2.use_count() == 3 );
+  VERIFY( a1 == b );
+  VERIFY( a2 != b );
+  VERIFY( a1.get() != a2.get() );
+
+  std::experimental::shared_ptr<A> a3(a1);
+  VERIFY( a3 == b );
+
+  a3 = a2;
+  VERIFY( a3.get() == &b->a );
+
+  return 0;
+}
+
+int
 main()
 {
   test01();
   test02();
+  test03();
   return 0;
 }
