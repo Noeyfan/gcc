@@ -110,25 +110,6 @@ test03()
   return 0;
 }
 
-// should be in copy_neg.cc
-
-//int
-//test04()
-//{
-//  reset_count_struct __attribute__((unused)) reset;
-//  bool test __attribute__((unused)) = true;
-//
-//  std::experimental::shared_ptr<B[10]> b(new B[10]);
-//  std::experimental::shared_ptr<A[10]> a(b);
-//  VERIFY( a.use_count() == 2 );
-//  VERIFY( A::ctor_count == 10 );
-//  VERIFY( A::dtor_count == 0 );
-//  VERIFY( B::ctor_count == 10 );
-//  VERIFY( B::dtor_count == 0 );
-//
-//  return 0;
-//}
-
 int
 main()
 {
