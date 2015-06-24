@@ -869,6 +869,20 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   template <typename _Tp>
     struct __libfund_v1 { using type = _Tp; };
 
+  // helper for _Compatible
+  template<typename _From_type, typename _To_type>
+    struct __sp_compatible_helper
+    {
+      static constexpr bool
+      value = is_convertible<_From_type*, _To_type*>::value;
+    };
+
+  template<size_t _Nm, typename _Tp>
+    struct __sp_compatible_helper<_Tp[_Nm], _Tp[]>
+    {
+      static constexpr bool value = true;
+    };
+
   template<typename _Tp, _Lock_policy _Lp>
     class __shared_ptr
     {
@@ -1184,7 +1198,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
   // Extend shared_ptr to support arrays
   template<typename _Tp, _Lock_policy _Lp>
-    class __shared_ptr<__libfund_v1<_Tp>, _Lp> : private __shared_ptr<typename remove_extent<_Tp>::type, _Lp>
+    class __shared_ptr<__libfund_v1<_Tp>, _Lp>
+    : __shared_ptr<typename remove_extent<_Tp>::type, _Lp>
     {
       using element_type = typename remove_extent<_Tp>::type;
 
@@ -1202,75 +1217,81 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
         { delete __p; }
       };
 
-      template<typename _Ptr>
-	using _Convertible
-	  = typename enable_if<is_convertible<_Ptr, _Tp*>::value>::type;
-
       using _Deleter_type
-	= typename conditional<is_array<_Tp>::value, _Array_Deleter, _Normal_Deleter>::type;
+	= typename conditional<is_array<_Tp>
+                               ::value, _Array_Deleter, _Normal_Deleter>::type;
 
-      using __base_type = __shared_ptr<element_type>;
+      template<typename _Tp1>
+	using _Compatible
+	  = typename enable_if<__sp_compatible_helper<_Tp1, _Tp>::value>::type;
+
+      using __Base_type = __shared_ptr<element_type>;
 
     public:
 
       constexpr __shared_ptr() noexcept
-      : __base_type() 
+      : __Base_type()
       { }
-      
+
       template<typename _Tp1>
 	explicit __shared_ptr(_Tp1* __p)
-      	: __base_type(__p, _Deleter_type())
+      	: __Base_type(__p, _Deleter_type())
         { }
 
       template<typename _Tp1, typename _Deleter>
 	__shared_ptr(_Tp1* __p, _Deleter __d)
-      	: __base_type(__p, __d)
+      	: __Base_type(__p, __d)
         { }
-      
+
       template<typename _Tp1, typename _Deleter, typename _Alloc>
 	__shared_ptr(_Tp1* __p, _Deleter __d, _Alloc __a)
-      	: __base_type(__p, __d, __a)
+      	: __Base_type(__p, __d, __a)
         { }
 
       template<typename _Deleter>
 	__shared_ptr(nullptr_t __p, _Deleter __d)
-        : __base_type(__p, __d)
+        : __Base_type(__p, __d)
         { }
 
       template<typename _Deleter, typename _Alloc>
 	__shared_ptr(nullptr_t __p, _Deleter __d, _Alloc __a)
-        : __base_type(__p, __d, __a)
+        : __Base_type(__p, __d, __a)
         { }
 
       template<typename _Tp1>
 	__shared_ptr(const __shared_ptr<__libfund_v1<_Tp1>, _Lp>&
-		     __r, _Tp* __p) noexcept
-        : __base_type(__r, __p)
+		     __r, element_type* __p) noexcept
+        : __Base_type(static_cast<const typename __shared_ptr
+                      <__libfund_v1<_Tp1>>::__Base_type&>(__r), __p)
         { }
 
       __shared_ptr(const __shared_ptr&) noexcept = default;
       __shared_ptr& operator=(const __shared_ptr&) noexcept = default;
       ~__shared_ptr() = default;
 
-      template<typename _Tp1, typename = _Convertible<_Tp1*>>
-	__shared_ptr(const __shared_ptr<__libfund_v1<_Tp1>, _Lp>& __r) noexcept
-        : __base_type(__r)
+      template<typename _Tp1, typename = _Compatible<_Tp1>>
+        __shared_ptr(const __shared_ptr<__libfund_v1<_Tp1>, _Lp>& __r) noexcept
+        : __Base_type(static_cast<const typename __shared_ptr
+                      <__libfund_v1<_Tp1>>::__Base_type&>(__r))
         { }
 
-      template<typename _Tp1, typename = _Convertible<_Tp1*>>
+      template<typename _Tp1, typename = _Compatible<_Tp1>>
 	__shared_ptr(__shared_ptr<__libfund_v1<_Tp1>, _Lp>&& __r) noexcept
-        : __base_type(std::move(__r))
+        : __Base_type(static_cast<typename __shared_ptr
+                      <__libfund_v1<_Tp1>>::__Base_type&&>(std::move(__r)))
         { }
 
       template<typename _Tp1>
 	explicit __shared_ptr(const __weak_ptr<__libfund_v1<_Tp1>, _Lp>& __r)
-        : __base_type(__r)
+        : __Base_type(static_cast<const typename __weak_ptr
+                      <__libfund_v1<_Tp1>>::__Base_type&>(__r))
         { }
 
       template<typename _Tp1, typename _Del, typename
-	      = _Convertible<typename unique_ptr<_Tp1, _Del>::pointer>>
+	      = _Compatible<typename remove_pointer<typename unique_ptr<_Tp1, _Del>
+                                                    ::pointer>::type>>
 	  __shared_ptr(std::unique_ptr<_Tp1, _Del>&& __r)
-          : __base_type(std::move(__r))
+          : __Base_type(std::move(__r))
           { }
 
       // Array did not support construct from auto_ptr
@@ -1280,9 +1301,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       // reset
       void
       reset() noexcept
-      { 
-        __shared_ptr(nullptr).swap(*this); 
-      }
+      { __shared_ptr(nullptr).swap(*this); }
 
       template<typename _Tp1>
 	void
@@ -1305,57 +1324,58 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       element_type&
       operator[](ptrdiff_t i) const noexcept
       {
-        _GLIBCXX_DEBUG_ASSERT(get() !=0 && i>=0);
+        _GLIBCXX_DEBUG_ASSERT(get() != 0 && i >= 0);
         // TODO shared_ptr<void> a (new int);
         return get()[i];
       }
-      
-      using __base_type::operator*;
-      using __base_type::operator->;
+
+      using __Base_type::operator*;
+      using __Base_type::operator->;
 
       template<typename _Tp1>
 	__shared_ptr&
-	operator=(const __shared_ptr<__libfund_v1<_Tp1>, _Lp>& __r) noexcept
+	operator=(const __shared_ptr<_Tp1, _Lp>& __r) noexcept
 	{
-          this->__base_type::operator=(__r);
+          this->__Base_type::operator=(__r);
           return *this;
 	}
 
       __shared_ptr&
       operator=(__shared_ptr&& __r) noexcept
       {
-        this->__base_type::operator=(std::move(__r));
+        this->__Base_type::operator=(std::move(__r));
         return *this;
       }
 
       template<class _Tp1>
 	__shared_ptr&
-	operator=(__shared_ptr<__libfund_v1<_Tp1>, _Lp>&& __r) noexcept
+	operator=(__shared_ptr<_Tp1, _Lp>&& __r) noexcept
 	{
-          // cannot use std::move here
-          // cause __base_type _Convertible fail
-          this->__base_type::operator=(__r);
+          this->__Base_type::operator=(std::move(__r));
           return *this;
 	}
 
-      using __base_type::operator bool;
-      using __base_type::get;
-      using __base_type::unique;
-      using __base_type::use_count;
-      using __base_type::swap;
+      using __Base_type::operator bool;
+      using __Base_type::get;
+      using __Base_type::unique;
+      using __Base_type::use_count;
+
+      void
+      swap(__shared_ptr& __other) noexcept
+      { this->__Base_type::swap(__other); }
 
       template<typename _Tp1>
         bool
         owner_before(__shared_ptr<__libfund_v1<_Tp1>, _Lp> const& __rhs) const
-        { return __base_type::owner_before(__rhs); }
+        { return __Base_type::owner_before(__rhs); }
 
       template<typename _Tp1>
         bool
         owner_before(__weak_ptr<__libfund_v1<_Tp1>, _Lp> const& __rhs) const
-        { return __base_type::owner_before(__rhs); }
+        { return __Base_type::owner_before(__rhs); }
 
     protected:
-        
+
       // make_shared not yet support for shared_ptr_arrays
       //template<typename _Alloc, typename... _Args>
       //  __shared_ptr(_Sp_make_shared_tag __tag, const _Alloc& __a,
@@ -1367,14 +1387,17 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       //	  _M_ptr = static_cast<_Tp*>(__p);
       //	  __enable_shared_from_this_helper(_M_refcount, _M_ptr, _M_ptr);
       //	}
-      
+
       // __weak_ptr::lock()
-      __shared_ptr(const __weak_ptr<__libfund_v1<_Tp>, _Lp>& __r, std::nothrow_t)
-      : __base_type(__r, std::nothrow)
+      __shared_ptr(const __weak_ptr<__libfund_v1<_Tp>, _Lp>& __r,
+                   std::nothrow_t)
+      : __Base_type(static_cast<const typename __weak_ptr
+                    <__libfund_v1<_Tp>>::__Base_type&>(__r),
+                    std::nothrow)
       { }
-      
+
     private:
-      using __base_type::_M_get_deleter;
+      using __Base_type::_M_get_deleter;
 
       template<typename _Tp1>
 	static _Tp1*
@@ -1385,12 +1408,12 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	static auto
 	_S_raw_ptr(_Tp1 __ptr) -> decltype(std::__addressof(*__ptr))
 	{ return std::__addressof(*__ptr); }
-      
+
       template<typename _Tp1, _Lock_policy _Lp1> friend class __weak_ptr;
       template<typename _Tp1, _Lock_policy _Lp1> friend class __shared_ptr;
-      
+
       template<typename _Del, typename _Tp1, _Lock_policy _Lp1>
-	friend _Del* get_deleter(const __shared_ptr<__libfund_v1<_Tp1>, _Lp1>&) noexcept;
+	friend _Del* get_deleter(const __shared_ptr<_Tp1, _Lp1>&) noexcept;
     };
 
   // 20.7.2.2.7 shared_ptr comparisons
@@ -1690,163 +1713,91 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       friend class __enable_shared_from_this<_Tp, _Lp>;
       friend class enable_shared_from_this<_Tp>;
 
-      _Tp*               _M_ptr;         // Contained pointer.
+      _Tp*	 	 _M_ptr;         // Contained pointer.
       __weak_count<_Lp>  _M_refcount;    // Reference counter.
     };
 
   // helpers for std::experimental::enable_shared_from_this
 
   template<typename _Tp, _Lock_policy _Lp = __default_lock_policy>
-    struct __helper_for_experimental_enable_shared
+    struct __weak_ptr_friend
     {
-      void _Call_M_assign(__weak_ptr<__libfund_v1<_Tp>, _Lp>& __wp, 
-			  _Tp* __ptr, 
-			  const __shared_count<_Lp>& __refcount)
-	{ __wp._M_assign(__ptr, __refcount); }
+      static void
+      _S_assign(__weak_ptr<__libfund_v1<_Tp>, _Lp>& __wp,
+                _Tp* __ptr,
+                const __shared_count<_Lp>& __refcount)
+      { __wp._M_assign(__ptr, __refcount); }
     };
 
   // weak_ptr specialization for __shared_ptr array
   template<typename _Tp, _Lock_policy _Lp>
     class __weak_ptr<__libfund_v1<_Tp>, _Lp>
+    : __weak_ptr<typename remove_extent<_Tp>::type, _Lp>
     {
-      template<typename _Ptr>
-	using _Convertible
-	  = typename enable_if<is_convertible<_Ptr, _Tp*>::value>::type;
-
-    public:
       using element_type = typename remove_extent<_Tp>::type;
 
+      template<typename _Tp1>
+	using _Compatible
+	  = typename enable_if<__sp_compatible_helper<_Tp1, _Tp>::value>::type;
+
+      using __Base_type = __weak_ptr<element_type>;
+
+    public:
+
       constexpr __weak_ptr() noexcept
-      : _M_ptr(nullptr), _M_refcount()
+      : __Base_type()
       { }
 
       __weak_ptr(const __weak_ptr&) noexcept = default;
 
       ~__weak_ptr() = default;
 
-      // The "obvious" converting constructor implementation:
-      //
-      //  template<typename _Tp1>
-      //    __weak_ptr(const __weak_ptr<_Tp1, _Lp>& __r)
-      //    : _M_ptr(__r._M_ptr), _M_refcount(__r._M_refcount) // never throws
-      //    { }
-      //
-      // has a serious problem.
-      //
-      //  __r._M_ptr may already have been invalidated. The _M_ptr(__r._M_ptr)
-      //  conversion may require access to *__r._M_ptr (virtual inheritance).
-      //
-      // It is not possible to avoid spurious access violations since
-      // in multithreaded programs __r._M_ptr may be invalidated at any point.
-      template<typename _Tp1, typename = _Convertible<_Tp1*>>
+      template<typename _Tp1, typename = _Compatible<_Tp1>>
 	__weak_ptr(const __weak_ptr<__libfund_v1<_Tp1>, _Lp>& __r) noexcept
-	: _M_refcount(__r._M_refcount)
-        { _M_ptr = __r.lock().get(); }
+	: __Base_type(static_cast<const typename __weak_ptr
+                      <__libfund_v1<_Tp>>::__Base_type&>(__r))
+        { }
 
-      template<typename _Tp1, typename = _Convertible<_Tp1*>>
+      template<typename _Tp1, typename = _Compatible<_Tp1>>
 	__weak_ptr(const __shared_ptr<__libfund_v1<_Tp1>, _Lp>& __r) noexcept
-	: _M_ptr(__r._M_ptr), _M_refcount(__r._M_refcount)
+        : __Base_type(static_cast<const typename __shared_ptr
+                      <__libfund_v1<_Tp1>>::__Base_type&>(__r))
 	{ }
 
       __weak_ptr(__weak_ptr&& __r) noexcept
-      : _M_ptr(__r._M_ptr), _M_refcount(std::move(__r._M_refcount))
-      { __r._M_ptr = nullptr; }
+      : __Base_type(std::move(__r))
+      { }
 
-      template<typename _Tp1, typename = _Convertible<_Tp1*>>
+      template<typename _Tp1, typename = _Compatible<_Tp1>>
 	__weak_ptr(__weak_ptr<__libfund_v1<_Tp1>, _Lp>&& __r) noexcept
-	: _M_ptr(__r.lock().get()), _M_refcount(std::move(__r._M_refcount))
-        { __r._M_ptr = nullptr; }
+        : __Base_type(static_cast<typename __weak_ptr
+                      <__libfund_v1<_Tp1>>::__Base_type&&>(std::move(__r)))
+        { }
 
-      __weak_ptr&
-      operator=(const __weak_ptr& __r) noexcept = default;
-
-      template<typename _Tp1>
-	__weak_ptr&
-	operator=(const __weak_ptr<__libfund_v1<_Tp1>, _Lp>& __r) noexcept
-	{
-	  _M_ptr = __r.lock().get();
-	  _M_refcount = __r._M_refcount;
-	  return *this;
-	}
-
-      template<typename _Tp1>
-	__weak_ptr&
-	operator=(const __shared_ptr<__libfund_v1<_Tp1>, _Lp>& __r) noexcept
-	{
-	  _M_ptr = __r._M_ptr;
-	  _M_refcount = __r._M_refcount;
-	  return *this;
-	}
-
-      __weak_ptr&
-      operator=(__weak_ptr&& __r) noexcept
-      {
-	_M_ptr = __r._M_ptr;
-	_M_refcount = std::move(__r._M_refcount);
-	__r._M_ptr = nullptr;
-	return *this;
-      }
-
-      template<typename _Tp1>
-	__weak_ptr&
-	operator=(__weak_ptr<__libfund_v1<_Tp1>, _Lp>&& __r) noexcept
-	{
-	  _M_ptr = __r.lock().get();
-	  _M_refcount = std::move(__r._M_refcount);
-	  __r._M_ptr = nullptr;
-	  return *this;
-	}
+      using __Base_type::operator=;
+      using __Base_type::use_count;
+      using __Base_type::expired;
+      using __Base_type::owner_before;
+      using __Base_type::reset;
+      using __Base_type::swap;
 
       __shared_ptr<__libfund_v1<_Tp>, _Lp>
       lock() const noexcept  // should not be element_type
       { return __shared_ptr<__libfund_v1<_Tp>, _Lp>(*this, std::nothrow); }
 
-      long
-      use_count() const noexcept
-      { return _M_refcount._M_get_use_count(); }
-
-      bool
-      expired() const noexcept
-      { return _M_refcount._M_get_use_count() == 0; }
-
-      template<typename _Tp1>
-	bool
-	owner_before(const __shared_ptr<_Tp1, _Lp>& __rhs) const
-	{ return _M_refcount._M_less(__rhs._M_refcount); }
-
-      template<typename _Tp1>
-	bool
-	owner_before(const __weak_ptr<_Tp1, _Lp>& __rhs) const
-	{ return _M_refcount._M_less(__rhs._M_refcount); }
-
-      void
-      reset() noexcept
-      { __weak_ptr().swap(*this); }
-
-      void
-      swap(__weak_ptr& __s) noexcept
-      {
-	std::swap(_M_ptr, __s._M_ptr);
-	_M_refcount._M_swap(__s._M_refcount);
-      }
-
     private:
       // Used by __enable_shared_from_this.
       void
-      _M_assign(_Tp* __ptr, const __shared_count<_Lp>& __refcount) noexcept
+      _M_assign(element_type* __ptr, const __shared_count<_Lp>& __refcount) noexcept
       {
-	_M_ptr = __ptr;
-	_M_refcount = __refcount;
+        this->__Base_type::_M_assign(__ptr, __refcount);
       }
 
       template<typename _Tp1, _Lock_policy _Lp1> friend class __shared_ptr;
       template<typename _Tp1, _Lock_policy _Lp1> friend class __weak_ptr;
       friend class __enable_shared_from_this<_Tp, _Lp>;
-      friend class __helper_for_experimental_enable_shared<_Tp, _Lp>;
+      friend class __weak_ptr_friend<_Tp, _Lp>;
       friend class enable_shared_from_this<_Tp>;
-
-      element_type*      _M_ptr;         // Contained pointer.
-      __weak_count<_Lp>  _M_refcount;    // Reference counter.
     };
 
   // 20.7.2.3.6 weak_ptr specialized algorithms.
