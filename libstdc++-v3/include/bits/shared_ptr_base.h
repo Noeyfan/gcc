@@ -1325,12 +1325,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       operator[](ptrdiff_t i) const noexcept
       {
         _GLIBCXX_DEBUG_ASSERT(get() != 0 && i >= 0);
-        // TODO shared_ptr<void> a (new int);
         return get()[i];
       }
-
-      using __Base_type::operator*;
-      using __Base_type::operator->;
 
       template<typename _Tp1>
 	__shared_ptr&
@@ -1355,11 +1351,6 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
           return *this;
 	}
 
-      using __Base_type::operator bool;
-      using __Base_type::get;
-      using __Base_type::unique;
-      using __Base_type::use_count;
-
       void
       swap(__shared_ptr& __other) noexcept
       { this->__Base_type::swap(__other); }
@@ -1367,12 +1358,23 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       template<typename _Tp1>
         bool
         owner_before(__shared_ptr<__libfund_v1<_Tp1>, _Lp> const& __rhs) const
-        { return __Base_type::owner_before(__rhs); }
+        { return __Base_type::owner_before(static_cast<const typename
+                                           __shared_ptr<__libfund_v1<_Tp1>>
+                                           ::__Base_type&>(__rhs)); }
 
       template<typename _Tp1>
         bool
         owner_before(__weak_ptr<__libfund_v1<_Tp1>, _Lp> const& __rhs) const
-        { return __Base_type::owner_before(__rhs); }
+        { return __Base_type::owner_before(static_cast<const typename
+                                           __weak_ptr<__libfund_v1<_Tp1>>
+                                           ::__Base_type&>(__rhs)); }
+
+      using __Base_type::operator*;
+      using __Base_type::operator->;
+      using __Base_type::operator bool;
+      using __Base_type::get;
+      using __Base_type::unique;
+      using __Base_type::use_count;
 
     protected:
 
@@ -1774,16 +1776,65 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                       <__libfund_v1<_Tp1>>::__Base_type&&>(std::move(__r)))
         { }
 
-      using __Base_type::operator=;
-      using __Base_type::use_count;
-      using __Base_type::expired;
-      using __Base_type::owner_before;
-      using __Base_type::reset;
-      using __Base_type::swap;
+      __weak_ptr&
+      operator=(const __weak_ptr& __r) noexcept = default;
+
+      template<typename _Tp1>
+	__weak_ptr&
+	operator=(const __weak_ptr<_Tp1, _Lp>& __r) noexcept
+	{
+          this->__Base_type::operator=(__r);
+          return *this;
+	}
+
+      template<typename _Tp1>
+	__weak_ptr&
+	operator=(const __shared_ptr<_Tp1, _Lp>& __r) noexcept
+	{
+          this->__Base_type::operator=(__r);
+          return *this;
+	}
+
+      __weak_ptr&
+      operator=(__weak_ptr&& __r) noexcept
+      {
+        this->__Base_type::operator=(std::move(__r));
+        return *this;
+      }
+
+      template<typename _Tp1>
+	__weak_ptr&
+	operator=(__weak_ptr<_Tp1, _Lp>&& __r) noexcept
+	{
+          this->__Base_type::operator=(std::move(__r));
+          return *this;
+	}
+
+      void
+      swap(__weak_ptr& __other) noexcept
+      { this->__Base_type::swap(__other); }
+
+      template<typename _Tp1>
+        bool
+        owner_before(const __shared_ptr<__libfund_v1<_Tp1>, _Lp>& __rhs) const
+        { return __Base_type::owner_before(static_cast<const typename
+                                           __shared_ptr<__libfund_v1<_Tp1>>
+                                           ::__Base_type&>(__rhs)); }
+
+      template<typename _Tp1>
+        bool
+        owner_before(const __weak_ptr<__libfund_v1<_Tp1>, _Lp>& __rhs) const
+        { return __Base_type::owner_before(static_cast<const typename
+                                           __weak_ptr<__libfund_v1<_Tp1>>
+                                           ::__Base_type&>(__rhs)); }
 
       __shared_ptr<__libfund_v1<_Tp>, _Lp>
       lock() const noexcept  // should not be element_type
       { return __shared_ptr<__libfund_v1<_Tp>, _Lp>(*this, std::nothrow); }
+
+      using __Base_type::use_count;
+      using __Base_type::expired;
+      using __Base_type::reset;
 
     private:
       // Used by __enable_shared_from_this.
