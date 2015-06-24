@@ -47,12 +47,12 @@ long B::dtor_count = 0;
 struct reset_count_struct
 {
   ~reset_count_struct()
-    {
-      A::ctor_count = 0;
-      A::dtor_count = 0;
-      B::ctor_count = 0;
-      B::dtor_count = 0;
-    }
+  {
+    A::ctor_count = 0;
+    A::dtor_count = 0;
+    B::ctor_count = 0;
+    B::dtor_count = 0;
+  }
 };
 
 // C++14 §20.8.2.2.3 shared_ptr assignment
@@ -65,6 +65,7 @@ test01()
 
   std::experimental::shared_ptr<A[5]> a;
   std::experimental::shared_ptr<A[]> a1;
+  std::experimental::shared_ptr<B[5]> a2;
 
   a = std::experimental::shared_ptr<A[5]> ();
   VERIFY( a.get() == 0 );
@@ -81,10 +82,17 @@ test01()
   VERIFY( B::dtor_count == 0 );
 
   a1 = std::experimental::shared_ptr<A[5]> (new A[5]);
-  VERIFY( a.get() != 0 );
+  VERIFY( a1.get() != 0 );
   VERIFY( A::ctor_count == 10 );
   VERIFY( A::dtor_count == 0 );
   VERIFY( B::ctor_count == 0 );
+  VERIFY( B::dtor_count == 0 );
+
+  a2 = std::experimental::shared_ptr<B[5]> (new B[5]);
+  VERIFY( a2.get() != 0 );
+  VERIFY( A::ctor_count == 15 );
+  VERIFY( A::dtor_count == 0 );
+  VERIFY( B::ctor_count == 5 );
   VERIFY( B::dtor_count == 0 );
 }
 
