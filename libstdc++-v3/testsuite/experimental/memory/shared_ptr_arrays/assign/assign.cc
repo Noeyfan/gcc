@@ -23,7 +23,6 @@
 #include <experimental/memory>
 #include <testsuite_hooks.h>
 
-
 struct A
 {
   A() { ++ctor_count; }
@@ -96,9 +95,26 @@ test01()
   VERIFY( B::dtor_count == 0 );
 }
 
+void
+test02()
+{
+  bool test __attribute__((unused)) = true;
+
+  std::experimental::shared_ptr<A[5]> p(new A[5]);
+  std::experimental::shared_ptr<A[5]> p1;
+  std::experimental::shared_ptr<A[]> p2;
+
+  p1 = p;
+  VERIFY( p.get() == p1.get() );
+
+  p2 = p1;
+  VERIFY( p1.get() == p2.get() );
+}
+
 int
 main()
 {
   test01();
+  test02();
   return 0;
 }

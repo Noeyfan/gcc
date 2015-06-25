@@ -1205,94 +1205,95 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       struct _Array_Deleter
       {
-        void
-        operator()(element_type const *__p) const
-        { delete [] __p; }
+	void
+	operator()(element_type const *__p) const
+	{ delete [] __p; }
       };
 
-      struct _Normal_Deleter
+       struct _Normal_Deleter
       {
-        void
-        operator()(element_type const *__p) const
-        { delete __p; }
+	void
+	operator()(element_type const *__p) const
+	{ delete __p; }
       };
 
       using _Deleter_type
-	= typename conditional<is_array<_Tp>
-                               ::value, _Array_Deleter, _Normal_Deleter>::type;
+	= typename conditional<is_array<_Tp>::value,
+			       _Array_Deleter,
+			       _Normal_Deleter>::type;
 
       template<typename _Tp1>
 	using _Compatible
 	  = typename enable_if<__sp_compatible_helper<_Tp1, _Tp>::value>::type;
 
-      using __Base_type = __shared_ptr<element_type>;
+      using _Base_type = __shared_ptr<element_type>;
 
     public:
 
       constexpr __shared_ptr() noexcept
-      : __Base_type()
+      : _Base_type()
       { }
 
       template<typename _Tp1>
 	explicit __shared_ptr(_Tp1* __p)
-      	: __Base_type(__p, _Deleter_type())
-        { }
+	: _Base_type(__p, _Deleter_type())
+	{ }
 
       template<typename _Tp1, typename _Deleter>
 	__shared_ptr(_Tp1* __p, _Deleter __d)
-      	: __Base_type(__p, __d)
-        { }
+	: _Base_type(__p, __d)
+	{ }
 
       template<typename _Tp1, typename _Deleter, typename _Alloc>
 	__shared_ptr(_Tp1* __p, _Deleter __d, _Alloc __a)
-      	: __Base_type(__p, __d, __a)
-        { }
+	: _Base_type(__p, __d, __a)
+	{ }
 
       template<typename _Deleter>
 	__shared_ptr(nullptr_t __p, _Deleter __d)
-        : __Base_type(__p, __d)
-        { }
+	: _Base_type(__p, __d)
+	{ }
 
       template<typename _Deleter, typename _Alloc>
 	__shared_ptr(nullptr_t __p, _Deleter __d, _Alloc __a)
-        : __Base_type(__p, __d, __a)
-        { }
+	: _Base_type(__p, __d, __a)
+	{ }
 
       template<typename _Tp1>
 	__shared_ptr(const __shared_ptr<__libfund_v1<_Tp1>, _Lp>&
 		     __r, element_type* __p) noexcept
-        : __Base_type(static_cast<const typename __shared_ptr
-                      <__libfund_v1<_Tp1>>::__Base_type&>(__r), __p)
-        { }
+	: _Base_type(static_cast<const typename __shared_ptr
+		     <__libfund_v1<_Tp1>>::_Base_type&>(__r), __p)
+	{ }
 
       __shared_ptr(const __shared_ptr&) noexcept = default;
       __shared_ptr& operator=(const __shared_ptr&) noexcept = default;
       ~__shared_ptr() = default;
 
       template<typename _Tp1, typename = _Compatible<_Tp1>>
-        __shared_ptr(const __shared_ptr<__libfund_v1<_Tp1>, _Lp>& __r) noexcept
-        : __Base_type(static_cast<const typename __shared_ptr
-                      <__libfund_v1<_Tp1>>::__Base_type&>(__r))
-        { }
+	__shared_ptr(const __shared_ptr<__libfund_v1<_Tp1>, _Lp>& __r) noexcept
+	: _Base_type(static_cast<const typename __shared_ptr
+		     <__libfund_v1<_Tp1>>::_Base_type&>(__r))
+	{ }
 
       template<typename _Tp1, typename = _Compatible<_Tp1>>
 	__shared_ptr(__shared_ptr<__libfund_v1<_Tp1>, _Lp>&& __r) noexcept
-        : __Base_type(static_cast<typename __shared_ptr
-                      <__libfund_v1<_Tp1>>::__Base_type&&>(std::move(__r)))
-        { }
+	: _Base_type(static_cast<typename __shared_ptr
+		     <__libfund_v1<_Tp1>>::_Base_type&&>(__r))
+	{ }
 
       template<typename _Tp1>
 	explicit __shared_ptr(const __weak_ptr<__libfund_v1<_Tp1>, _Lp>& __r)
-        : __Base_type(static_cast<const typename __weak_ptr
-                      <__libfund_v1<_Tp1>>::__Base_type&>(__r))
-        { }
+	: _Base_type(static_cast<const typename __weak_ptr
+		     <__libfund_v1<_Tp1>>::_Base_type&>(__r))
+	{ }
 
       template<typename _Tp1, typename _Del, typename
-	      = _Compatible<typename remove_pointer<typename unique_ptr<_Tp1, _Del>
-                                                    ::pointer>::type>>
+	      = _Compatible<typename remove_pointer
+	      <typename unique_ptr<_Tp1, _Del> ::pointer>::type>>
 	  __shared_ptr(std::unique_ptr<_Tp1, _Del>&& __r)
-          : __Base_type(std::move(__r))
-          { }
+	  : _Base_type(std::move(__r))
+	  { }
 
       // Array did not support construct from auto_ptr
 
@@ -1324,57 +1325,61 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       element_type&
       operator[](ptrdiff_t i) const noexcept
       {
-        _GLIBCXX_DEBUG_ASSERT(get() != 0 && i >= 0);
-        return get()[i];
+	_GLIBCXX_DEBUG_ASSERT(get() != 0 && i >= 0);
+	return get()[i];
       }
 
       template<typename _Tp1>
 	__shared_ptr&
-	operator=(const __shared_ptr<_Tp1, _Lp>& __r) noexcept
+	operator=(const __shared_ptr<__libfund_v1<_Tp1>, _Lp>& __r) noexcept
 	{
-          this->__Base_type::operator=(__r);
-          return *this;
+	  this->_Base_type::operator=(static_cast
+				      <const typename __shared_ptr
+				      <__libfund_v1<_Tp1>>::_Base_type&>(__r));
+	  return *this;
 	}
 
       __shared_ptr&
       operator=(__shared_ptr&& __r) noexcept
       {
-        this->__Base_type::operator=(std::move(__r));
-        return *this;
+	this->_Base_type::operator=(std::move(__r));
+	return *this;
       }
 
       template<class _Tp1>
 	__shared_ptr&
-	operator=(__shared_ptr<_Tp1, _Lp>&& __r) noexcept
+	operator=(__shared_ptr<__libfund_v1<_Tp1>, _Lp>&& __r) noexcept
 	{
-          this->__Base_type::operator=(std::move(__r));
-          return *this;
+	  this->_Base_type::operator=(static_cast
+				      <typename __shared_ptr
+				      <__libfund_v1<_Tp1>>::_Base_type&&>(__r));
+	  return *this;
 	}
 
       void
       swap(__shared_ptr& __other) noexcept
-      { this->__Base_type::swap(__other); }
+      { this->_Base_type::swap(__other); }
 
       template<typename _Tp1>
-        bool
-        owner_before(__shared_ptr<__libfund_v1<_Tp1>, _Lp> const& __rhs) const
-        { return __Base_type::owner_before(static_cast<const typename
-                                           __shared_ptr<__libfund_v1<_Tp1>>
-                                           ::__Base_type&>(__rhs)); }
+	bool
+	owner_before(__shared_ptr<__libfund_v1<_Tp1>, _Lp> const& __rhs) const
+	{ return _Base_type::owner_before(static_cast<const typename
+					  __shared_ptr<__libfund_v1<_Tp1>>
+					  ::_Base_type&>(__rhs)); }
 
       template<typename _Tp1>
-        bool
-        owner_before(__weak_ptr<__libfund_v1<_Tp1>, _Lp> const& __rhs) const
-        { return __Base_type::owner_before(static_cast<const typename
-                                           __weak_ptr<__libfund_v1<_Tp1>>
-                                           ::__Base_type&>(__rhs)); }
+	bool
+	owner_before(__weak_ptr<__libfund_v1<_Tp1>, _Lp> const& __rhs) const
+	{ return _Base_type::owner_before(static_cast<const typename
+					  __weak_ptr<__libfund_v1<_Tp1>>
+					  ::_Base_type&>(__rhs)); }
 
-      using __Base_type::operator*;
-      using __Base_type::operator->;
-      using __Base_type::operator bool;
-      using __Base_type::get;
-      using __Base_type::unique;
-      using __Base_type::use_count;
+      using _Base_type::operator*;
+      using _Base_type::operator->;
+      using _Base_type::operator bool;
+      using _Base_type::get;
+      using _Base_type::unique;
+      using _Base_type::use_count;
 
     protected:
 
@@ -1392,14 +1397,14 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       // __weak_ptr::lock()
       __shared_ptr(const __weak_ptr<__libfund_v1<_Tp>, _Lp>& __r,
-                   std::nothrow_t)
-      : __Base_type(static_cast<const typename __weak_ptr
-                    <__libfund_v1<_Tp>>::__Base_type&>(__r),
-                    std::nothrow)
+		   std::nothrow_t)
+      : _Base_type(static_cast<const typename __weak_ptr
+		   <__libfund_v1<_Tp>>::_Base_type&>(__r),
+		   std::nothrow)
       { }
 
     private:
-      using __Base_type::_M_get_deleter;
+      using _Base_type::_M_get_deleter;
 
       template<typename _Tp1>
 	static _Tp1*
@@ -1726,8 +1731,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     {
       static void
       _S_assign(__weak_ptr<__libfund_v1<_Tp>, _Lp>& __wp,
-                _Tp* __ptr,
-                const __shared_count<_Lp>& __refcount)
+		_Tp* __ptr,
+		const __shared_count<_Lp>& __refcount)
       { __wp._M_assign(__ptr, __refcount); }
     };
 
@@ -1742,12 +1747,12 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	using _Compatible
 	  = typename enable_if<__sp_compatible_helper<_Tp1, _Tp>::value>::type;
 
-      using __Base_type = __weak_ptr<element_type>;
+      using _Base_type = __weak_ptr<element_type>;
 
     public:
 
       constexpr __weak_ptr() noexcept
-      : __Base_type()
+      : _Base_type()
       { }
 
       __weak_ptr(const __weak_ptr&) noexcept = default;
@@ -1756,93 +1761,98 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       template<typename _Tp1, typename = _Compatible<_Tp1>>
 	__weak_ptr(const __weak_ptr<__libfund_v1<_Tp1>, _Lp>& __r) noexcept
-	: __Base_type(static_cast<const typename __weak_ptr
-                      <__libfund_v1<_Tp>>::__Base_type&>(__r))
-        { }
+	: _Base_type(static_cast<const typename __weak_ptr
+		     <__libfund_v1<_Tp>>::_Base_type&>(__r))
+	{ }
 
       template<typename _Tp1, typename = _Compatible<_Tp1>>
 	__weak_ptr(const __shared_ptr<__libfund_v1<_Tp1>, _Lp>& __r) noexcept
-        : __Base_type(static_cast<const typename __shared_ptr
-                      <__libfund_v1<_Tp1>>::__Base_type&>(__r))
+	: _Base_type(static_cast<const typename __shared_ptr
+		     <__libfund_v1<_Tp1>>::_Base_type&>(__r))
 	{ }
 
       __weak_ptr(__weak_ptr&& __r) noexcept
-      : __Base_type(std::move(__r))
+      : _Base_type(std::move(__r))
       { }
 
       template<typename _Tp1, typename = _Compatible<_Tp1>>
 	__weak_ptr(__weak_ptr<__libfund_v1<_Tp1>, _Lp>&& __r) noexcept
-        : __Base_type(static_cast<typename __weak_ptr
-                      <__libfund_v1<_Tp1>>::__Base_type&&>(std::move(__r)))
-        { }
+	: _Base_type(static_cast<typename __weak_ptr
+		     <__libfund_v1<_Tp1>>::_Base_type&&>(std::move(__r)))
+	{ }
 
       __weak_ptr&
       operator=(const __weak_ptr& __r) noexcept = default;
 
       template<typename _Tp1>
 	__weak_ptr&
-	operator=(const __weak_ptr<_Tp1, _Lp>& __r) noexcept
+	operator=(const __weak_ptr<__libfund_v1<_Tp1>, _Lp>& __r) noexcept
 	{
-          this->__Base_type::operator=(__r);
-          return *this;
+	  this->_Base_type::operator=(static_cast
+				      <const typename __weak_ptr
+				      <__libfund_v1<_Tp1>>::_Base_type&>(__r));
+	  return *this;
 	}
 
       template<typename _Tp1>
 	__weak_ptr&
 	operator=(const __shared_ptr<_Tp1, _Lp>& __r) noexcept
 	{
-          this->__Base_type::operator=(__r);
-          return *this;
+	  this->_Base_type::operator=(static_cast
+				      <const typename __shared_ptr
+				      <__libfund_v1<_Tp1>>::_Base_type&>(__r));
+	  return *this;
 	}
 
       __weak_ptr&
       operator=(__weak_ptr&& __r) noexcept
       {
-        this->__Base_type::operator=(std::move(__r));
-        return *this;
+	this->_Base_type::operator=(std::move(__r));
+	return *this;
       }
 
       template<typename _Tp1>
 	__weak_ptr&
 	operator=(__weak_ptr<_Tp1, _Lp>&& __r) noexcept
 	{
-          this->__Base_type::operator=(std::move(__r));
-          return *this;
+	  this->_Base_type::operator=(static_cast
+				      <typename __weak_ptr
+				      <__libfund_v1<_Tp1>>::_Base_type&&>(__r));
+	  return *this;
 	}
 
       void
       swap(__weak_ptr& __other) noexcept
-      { this->__Base_type::swap(__other); }
+      { this->_Base_type::swap(__other); }
 
       template<typename _Tp1>
-        bool
-        owner_before(const __shared_ptr<__libfund_v1<_Tp1>, _Lp>& __rhs) const
-        { return __Base_type::owner_before(static_cast<const typename
-                                           __shared_ptr<__libfund_v1<_Tp1>>
-                                           ::__Base_type&>(__rhs)); }
+	bool
+	owner_before(const __shared_ptr<__libfund_v1<_Tp1>, _Lp>& __rhs) const
+	{ return _Base_type::owner_before(static_cast<const typename
+					  __shared_ptr<__libfund_v1<_Tp1>>
+					  ::_Base_type&>(__rhs)); }
 
       template<typename _Tp1>
-        bool
-        owner_before(const __weak_ptr<__libfund_v1<_Tp1>, _Lp>& __rhs) const
-        { return __Base_type::owner_before(static_cast<const typename
-                                           __weak_ptr<__libfund_v1<_Tp1>>
-                                           ::__Base_type&>(__rhs)); }
+	bool
+	owner_before(const __weak_ptr<__libfund_v1<_Tp1>, _Lp>& __rhs) const
+	{ return _Base_type::owner_before(static_cast<const typename
+					  __weak_ptr<__libfund_v1<_Tp1>>
+					  ::_Base_type&>(__rhs)); }
 
       __shared_ptr<__libfund_v1<_Tp>, _Lp>
       lock() const noexcept  // should not be element_type
       { return __shared_ptr<__libfund_v1<_Tp>, _Lp>(*this, std::nothrow); }
 
-      using __Base_type::use_count;
-      using __Base_type::expired;
-      using __Base_type::reset;
+      using _Base_type::use_count;
+      using _Base_type::expired;
+      using _Base_type::reset;
 
     private:
       // Used by __enable_shared_from_this.
       void
-      _M_assign(element_type* __ptr, const __shared_count<_Lp>& __refcount) noexcept
-      {
-        this->__Base_type::_M_assign(__ptr, __refcount);
-      }
+      _M_assign(element_type* __ptr,
+		const __shared_count<_Lp>& __refcount) noexcept
+      { this->_Base_type::_M_assign(__ptr, __refcount); }
 
       template<typename _Tp1, _Lock_policy _Lp1> friend class __shared_ptr;
       template<typename _Tp1, _Lock_policy _Lp1> friend class __weak_ptr;

@@ -260,66 +260,66 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	using _Compatible
 	  = typename enable_if<__sp_compatible_helper<_Tp1, _Tp>::value>::type;
 
-      using __Base_type = __shared_ptr<_Tp>;
+      using _Base_type = __shared_ptr<_Tp>;
 
       // 8.2.1.1, shared_ptr constructors
       constexpr shared_ptr() noexcept = default;
 
       template<typename _Tp1>
-        explicit shared_ptr(_Tp1* __p) : __Base_type(__p) { }
+        explicit shared_ptr(_Tp1* __p) : _Base_type(__p) { }
 
       template<typename _Tp1, typename _Deleter>
         shared_ptr(_Tp1* __p, _Deleter __d)
-        : __Base_type(__p, __d) { }
+        : _Base_type(__p, __d) { }
 
       template<typename _Tp1, typename _Deleter, typename _Alloc>
         shared_ptr(_Tp1* __p, _Deleter __d, _Alloc __a)
-        : __Base_type(__p, __d, __a) { }
+        : _Base_type(__p, __d, __a) { }
 
       template<typename _Deleter>
         shared_ptr(nullptr_t __p, _Deleter __d)
-        : __Base_type(__p, __d) { }
+        : _Base_type(__p, __d) { }
 
       template<typename _Deleter, typename _Alloc>
         shared_ptr(nullptr_t __p, _Deleter __d, _Alloc __a)
-        : __Base_type(__p, __d, __a) { }
+        : _Base_type(__p, __d, __a) { }
 
       template<typename _Tp1>
         shared_ptr(const shared_ptr<_Tp1>& __r, element_type* __p) noexcept
-        : __Base_type(__r, __p) { }
+        : _Base_type(__r, __p) { }
 
       shared_ptr(const shared_ptr& __r) noexcept
-	: __Base_type(__r) { }
+	: _Base_type(__r) { }
 
       template<typename _Tp1, typename = _Compatible<_Tp1>>
 	shared_ptr(const shared_ptr<_Tp1>& __r) noexcept
-	: __Base_type(__r) { }
+	: _Base_type(__r) { }
 
       shared_ptr(const shared_ptr<_Tp>&& __r) noexcept
-      : __Base_type(std::move(__r)) { }
+      : _Base_type(std::move(__r)) { }
 
       template<typename _Tp1, typename = _Compatible<_Tp1>>
 	shared_ptr(shared_ptr<_Tp1>&& __r) noexcept
-	: __Base_type(std::move(__r)) { }
+	: _Base_type(std::move(__r)) { }
 
       template<typename _Tp1>
         explicit shared_ptr(const weak_ptr<_Tp1>& __r)
-        : __Base_type(__r) { }
+        : _Base_type(__r) { }
 
 #if _GLIBCXX_USE_DEPRECATED
       template<typename _Tp1>
 	shared_ptr(std::auto_ptr<_Tp1>&& __r)
-	: __Base_type() { }
+	: _Base_type() { }
 #endif
 
       template<typename _Tp1, typename _Del, typename
                  = _Compatible<typename remove_pointer<typename unique_ptr<_Tp1, _Del>
                                                        ::pointer>::type>>
 	  shared_ptr(std::unique_ptr<_Tp1, _Del>&& __r)
-	  : __Base_type(std::move(__r)) { }
+	  : _Base_type(std::move(__r)) { }
 
       constexpr shared_ptr(nullptr_t __p)
-      : __Base_type(__p) { }
+      : _Base_type(__p) { }
 
       // C++14 §20.8.2.2
       ~shared_ptr() = default;
@@ -331,14 +331,14 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	shared_ptr&
       	operator=(const shared_ptr<_Tp1>& __r) noexcept
 	{
-	  this->__Base_type::operator=(__r);
+	  this->_Base_type::operator=(__r);
 	  return *this;
 	}
 
       shared_ptr&
       operator=(shared_ptr&& __r) noexcept
       {
-        this->__Base_type::operator=(std::move(__r));
+        this->_Base_type::operator=(std::move(__r));
         return *this;
       }
 
@@ -346,7 +346,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	shared_ptr&
       	operator=(shared_ptr<_Tp1>&& __r) noexcept
 	{
-	  this->__Base_type::operator=(std::move(__r));
+	  this->_Base_type::operator=(std::move(__r));
 	  return *this;
 	}
 
@@ -364,7 +364,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	shared_ptr&
 	operator=(unique_ptr<_Tp1, _Del>&& __r)
 	{
-	  this->__Base_type::operator=(std::move(__r));
+	  this->_Base_type::operator=(std::move(__r));
 	  return *this;
 	}
 
@@ -377,7 +377,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       template<typename _Alloc, typename... _Args>
       shared_ptr(_Sp_make_shared_tag __tag, const _Alloc& __a,
         	 _Args&&... __args)
-      : __Base_type(__tag, __a, std::forward<_Args>(__args)...)
+      : _Base_type(__tag, __a, std::forward<_Args>(__args)...)
       { }
 
       template<typename _Tp1, typename _Alloc, typename... _Args>
@@ -385,7 +385,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	allocate_shared(const _Alloc& __a, _Args&&...  __args);
 
       shared_ptr(const weak_ptr<_Tp>& __r, std::nothrow_t)
-      : __Base_type(__r, std::nothrow) { }
+      : _Base_type(__r, std::nothrow) { }
 
       friend class weak_ptr<_Tp>;
     };
@@ -427,8 +427,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
      operator<(const shared_ptr<_Tp1>& __a,
 	       const shared_ptr<_Tp2>& __b) noexcept
      {
-       using _Tp1_RE = typename remove_extent<_Tp1>::type;
-       using _Tp2_RE = typename remove_extent<_Tp2>::type;
+       using _Tp1_RE = typename shared_ptr<_Tp1>::element_type;
+       using _Tp2_RE = typename shared_ptr<_Tp2>::element_type;
        using _CT = typename std::common_type<_Tp1_RE*, _Tp2_RE*>::type;
        return std::less<_CT>()(__a.get(), __b.get());
      }
@@ -437,7 +437,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
      inline bool
      operator<(const shared_ptr<_Tp>& __a, nullptr_t) noexcept
      {
-       using _Tp_RE = typename remove_extent<_Tp>::type;
+       using _Tp_RE = typename shared_ptr<_Tp>::element_type;
        return std::less<_Tp_RE>()(__a.get(), nullptr);
      }
 
@@ -445,7 +445,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
      inline bool
      operator<(nullptr_t, const shared_ptr<_Tp>& __a) noexcept
      {
-       using _Tp_RE = typename remove_extent<_Tp>::type;
+       using _Tp_RE = typename shared_ptr<_Tp>::element_type;
        return std::less<_Tp_RE*>()(nullptr, __a.get());
      }
 
@@ -475,7 +475,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
      inline bool
      operator>(const shared_ptr<_Tp>& __a, nullptr_t) noexcept
      {
-       using _Tp_RE = typename remove_extent<_Tp>::type;
+       using _Tp_RE = typename shared_ptr<_Tp>::element_type;
        return std::less<_Tp_RE*>()(nullptr, __a.get());
      }
 
@@ -483,7 +483,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
      inline bool
      operator>(nullptr_t, const shared_ptr<_Tp>& __a) noexcept
      {
-       using _Tp_RE = typename remove_extent<_Tp>::type;
+       using _Tp_RE = typename shared_ptr<_Tp>::element_type;
        return std::less<_Tp_RE*>()(__a.get(), nullptr);
      }
 
@@ -546,26 +546,26 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	using _Compatible
 	  = typename enable_if<__sp_compatible_helper<_Tp1, _Tp>::value>::type;
 
-      using __Base_type = __weak_ptr<_Tp>;
+      using _Base_type = __weak_ptr<_Tp>;
 
    public:
        constexpr weak_ptr() noexcept = default;
 
        template<typename _Tp1, typename = _Compatible<_Tp1>>
 	 weak_ptr(const shared_ptr<_Tp1>& __r) noexcept
-	 : __Base_type(__r) { }
+	 : _Base_type(__r) { }
 
        weak_ptr(const weak_ptr&) noexcept = default;
 
        template<typename _Tp1, typename = _Compatible<_Tp1>>
 	 weak_ptr(const weak_ptr<_Tp1>& __r) noexcept
-	 : __Base_type(__r) { }
+	 : _Base_type(__r) { }
 
        weak_ptr(weak_ptr&&) noexcept = default;
 
        template<typename _Tp1, typename = _Compatible<_Tp1>>
 	 weak_ptr(weak_ptr<_Tp1>&& __r) noexcept
-	 : __Base_type(std::move(__r)) { }
+	 : _Base_type(std::move(__r)) { }
 
        weak_ptr&
        operator=(const weak_ptr& __r) noexcept = default;
@@ -574,7 +574,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	 weak_ptr&
 	 operator=(const weak_ptr<_Tp1>& __r) noexcept
 	 {
-	   this->__Base_type::operator=(__r);
+	   this->_Base_type::operator=(__r);
 	   return *this;
 	 }
 
@@ -582,7 +582,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	 weak_ptr&
 	 operator=(const shared_ptr<_Tp1>& __r) noexcept
 	 {
-	   this->__Base_type::operator=(__r);
+	   this->_Base_type::operator=(__r);
 	   return *this;
 	 }
 
@@ -593,7 +593,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	 weak_ptr&
 	 operator=(weak_ptr<_Tp1>&& __r) noexcept
 	 {
-	   this->__Base_type::operator=(std::move(__r));
+	   this->_Base_type::operator=(std::move(__r));
 	   return *this;
 	 }
 

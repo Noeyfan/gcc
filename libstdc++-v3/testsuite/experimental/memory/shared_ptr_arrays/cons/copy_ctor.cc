@@ -147,6 +147,25 @@ test05()
 }
 
 int
+test06()
+{
+  reset_count_struct __attribute__((unused)) reset;
+  bool test __attribute__((unused)) = true;
+
+  std::experimental::shared_ptr<B> a1(new B);
+  std::experimental::shared_ptr<A> a2(a1);
+
+  VERIFY( a2.use_count() == 2 );
+  VERIFY( a2.get() == a1.get() );
+  VERIFY( A::ctor_count == 1 );
+  VERIFY( A::dtor_count == 0 );
+  VERIFY( B::ctor_count == 1 );
+  VERIFY( B::dtor_count == 0 );
+
+  return 0;
+}
+
+int
 main()
 {
   test01();
@@ -154,5 +173,6 @@ main()
   test03();
   test04();
   test05();
+  test06();
   return 0;
 }

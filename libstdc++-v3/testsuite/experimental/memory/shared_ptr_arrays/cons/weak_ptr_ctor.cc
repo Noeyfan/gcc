@@ -35,10 +35,6 @@ test01()
   A * a = new A[5];
   std::experimental::shared_ptr<A[5]> a1(a);
   std::experimental::weak_ptr<A[5]> wa(a1);
-  {
-    std::experimental::weak_ptr<A[5]> wa1(a1);
-    wa1 = wa;
-  }
   std::experimental::shared_ptr<A[5]> a2(wa);
   std::experimental::shared_ptr<A[5]> a3 = wa.lock();
   VERIFY( a2.get() == a );
