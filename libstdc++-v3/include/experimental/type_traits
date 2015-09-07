@@ -40,6 +40,7 @@
 #else
 
 #include <type_traits>
+#include <functional>
 
 
 namespace std _GLIBCXX_VISIBILITY(default)
@@ -218,8 +219,142 @@ template <typename _From, typename _To>
   // raw_invocation_type (still unimplemented)
   // invocation_type_t (still unimplemented)
   // raw_invocation_type_t (still unimplemented)
+
+template<typename>
+  struct raw_invocation_type;
+
+template<typename>
+  struct invocation_type;
+
+template<bool, bool, typename _Functor, typename... _ArgTypes>
+  struct __invocation_type_impl;
+
+template <typename _Res, typename _Arg, typename... _Args>
+  struct __invocation_type_memfun;
+
+template <typename _Res, typename _Arg>
+  struct __invocation_type_memobj;
+
+template <typename _Functor, typename... _Args>
+  struct __invocation_type_other;
+
+// Invocation parameters of INVOKE(f, t1, t2, ..., tN)
+// f is a pointer to member function, bullet 1 and 2
+template <typename _Res, typename _Class, typename _Arg, typename... _Args>
+  struct __invocation_type_memfun<_Res _Class::*, _Arg, _Args...>
+  {
+    using _MemPtr = _Res _Class::*;
+    using type = std::result_of_t<_MemPtr(_Arg, _Args...)>(_Arg&&, _Args...);
+  };
+
+// f is a pointer to member data, bullet 3 and 4
+template <typename _Res, typename _Class, typename _Arg>
+  struct __invocation_type_memobj<_Res _Class::*, _Arg>
+  {
+    using _MemPtr = _Res _Class::*;
+    using type = std::result_of_t<_MemPtr(_Arg)>(_Arg&&);
+  };
+
+// other cases, bullet 5 and 6
+template <typename _Functor, typename... _Args>
+  struct __invocation_type_other
+  {
+    using type = std::result_of_t<
+		  _Functor(_Args...)
+		  >(_Args...);
+  };
+
+template<typename _MemPtr, typename _Arg, typename... _Args>
+  struct __invocation_type_impl<false, true, _MemPtr, _Arg, _Args...>
+  : public __invocation_type_memfun<typename std::decay<_MemPtr>::type,
+				    _Arg, _Args...>
+  { };
+
+template<typename _MemPtr, typename _Arg>
+  struct __invocation_type_impl<true, false, _MemPtr, _Arg>
+  : public __invocation_type_memobj<typename std::decay<_MemPtr>::type,
+				    _Arg>
+  { };
+
+template<typename _MemPtr, typename... _Args>
+  struct __invocation_type_impl<false, false, _MemPtr, _Args...>
+  : public __invocation_type_other<typename std::decay<_MemPtr>::type,
+				    _Args...>
+  { };
+
+template<typename _Functor, typename... _ArgTypes>
+  struct raw_invocation_type<_Functor(_ArgTypes...)>
+  : public __invocation_type_impl<
+      std::is_member_object_pointer<
+	typename std::remove_reference<_Functor>::type
+      >::value,
+      std::is_member_function_pointer<
+        typename std::remove_reference<_Functor>::type
+      >::value,
+	_Functor, _ArgTypes...
+    >
+  { };
+
+template<typename _Functor, typename... _ArgTypes>
+  struct invocation_type<_Functor(_ArgTypes...)>
+  { };
+
+
 _GLIBCXX_END_NAMESPACE_VERSION
 } // namespace fundamentals_v1
+
+inline namespace fundamentals_v2
+{
+_GLIBCXX_BEGIN_NAMESPACE_VERSION
+
+#define __cpp_lib_experimental_detect 201505
+
+// [meta.detect]
+
+template<typename...> using void_t = void;
+
+struct nonesuch
+{
+  nonesuch() = delete;
+  ~nonesuch() = delete;
+  nonesuch(nonesuch const&) = delete;
+  void operator=(nonesuch const&) = delete;
+};
+
+template<template<typename...> class _Op, typename... _Args>
+  using is_detected
+    = typename std::__detector<nonesuch, void, _Op, _Args...>::value_t;
+
+template<template<typename...> class _Op, typename... _Args>
+  constexpr bool is_detected_v = is_detected<_Op, _Args...>::value;
+
+template<template<typename...> class _Op, typename... _Args>
+  using detected_t
+    = typename std::__detector<nonesuch, void, _Op, _Args...>::type;
+
+template<typename _Default, template<typename...> class _Op, typename... _Args>
+  using detected_or = std::__detected_or<_Default, _Op, _Args...>;
+
+template<typename _Default, template<typename...> class _Op, typename... _Args>
+  using detected_or_t = typename detected_or<_Default, _Op, _Args...>::type;
+
+template<typename Expected, template<typename...> class _Op, typename... _Args>
+  using is_detected_exact = is_same<Expected, detected_t<_Op, _Args...>>;
+
+template<typename Expected, template<typename...> class _Op, typename... _Args>
+  constexpr bool is_detected_exact_v
+    = is_detected_exact<Expected, _Op, _Args...>::value;
+
+template<typename _To, template<typename...> class _Op, typename... _Args>
+  using is_detected_convertible
+    = is_convertible<detected_t<_Op, _Args...>, _To>;
+
+template<typename _To, template<typename...> class _Op, typename... _Args>
+  constexpr bool is_detected_convertible_v
+    = is_detected_convertible<_To, _Op, _Args...>::value;
+
+_GLIBCXX_END_NAMESPACE_VERSION
+} // namespace fundamentals_v2
 } // namespace experimental
 } // namespace std
 

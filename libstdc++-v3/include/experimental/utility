@@ -1,0 +1,16 @@
+#ifndef _GLIBCXX_EXPERIMENTAL_UTILITY
+#define _GLIBCXX_EXPERIMENTAL_UTILITY 1
+
+#include <utility>
+
+namespace std {
+namespace experimental {
+inline namespace fundamentals_v1 {
+  //3.1.2, erased-type placeholder
+  using erased_type = std::__erased_type;
+
+} // namespace fundamentals_v1
+} // namespace experimental
+} // namespace std
+
+#endif
